@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<link rel="manifest" href="manifest.webmanifest">
+<title>WealthFlow</title>
+<style>
+:root{--bg:#07111f;--card:#0f1d31;--line:#24405f;--text:#f7fbff;--muted:#91a7c0;--blue:#2387ff;--green:#31d6a6;--amber:#ffbd59;--red:#ff6677}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:linear-gradient(180deg,#07111f,#081625);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+.app{max-width:900px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+h1{margin:0;font-size:24px}h2{font-size:18px;margin:0 0 12px}.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.card{background:linear-gradient(180deg,#10203a,#0d1a2c);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:17px;padding:13px}
+.lab{font-size:11px;color:var(--muted);margin-bottom:6px}.val{font-size:21px;font-weight:850}.green{color:#65e5bf}.blue{color:#80b9ff}.amber{color:#ffd082}.red{color:#ff8794}
+.field{margin-bottom:10px}.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 6px 2px}
+input,select{width:100%;min-height:48px;border-radius:14px;border:1px solid #294766;background:#081727;color:var(--text);padding:11px 12px;font-size:17px}
+button{min-height:46px;border:0;border-radius:14px;background:var(--blue);color:white;font-weight:800;padding:11px 14px}
+.btn{width:100%}.secondary{background:#172b45;border:1px solid #315271}.danger{background:#3a1921}
+.banner{margin-top:10px;padding:11px 12px;border-radius:14px;font-size:12px;line-height:1.4;background:#0b2139;border:1px solid #285786;color:#c7e1ff}
+.good{background:#0c2a24;border-color:#286955;color:#b8f0de}.bad{background:#35171e;border-color:#75313f;color:#ffc0c8}
+.item{padding:12px 0;border-bottom:1px solid #203852}.item:last-child{border-bottom:0}.itemtop{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.progress{height:8px;background:#13233a;border-radius:999px;overflow:hidden;margin-top:7px}.bar{height:100%;background:linear-gradient(90deg,var(--blue),#31c7ff)}
+.tabs{position:sticky;bottom:8px;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:7px;background:rgba(5,15,27,.92);backdrop-filter:blur(18px);border:1px solid #223e5d;border-radius:18px}
+.tab{background:transparent;color:#8199b5;font-size:11px}.tab.active{background:#183657;color:#e4f1ff}.page{display:none}.page.active{display:block}
+.tx{background:#0a1829;border:1px solid #213b58;border-radius:15px;padding:11px;margin-bottom:8px}.txhead{display:flex;justify-content:space-between;gap:10px}.txname{font-size:13px;font-weight:800}.txmeta{font-size:11px;color:var(--muted);margin-top:3px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1px solid #203852;text-align:left;font-size:12px}th{color:#91a8c2;font-size:10px;text-transform:uppercase}.num{text-align:right}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header style="margin-bottom:14px"><h1>WealthFlow</h1><div class="sub">Piano personale · ciclo stipendio</div></header>
+
+<section id="dashboard" class="page active">
+<div class="card"><h2>Dashboard</h2><div class="grid">
+<div class="metric"><div class="lab">Stipendio</div><div class="val" id="kSalary"></div></div>
+<div class="metric"><div class="lab">Speso</div><div class="val amber" id="kSpent"></div></div>
+<div class="metric"><div class="lab">Disponibile</div><div class="val blue" id="kAvailable"></div></div>
+<div class="metric"><div class="lab">Risparmio pianificato</div><div class="val green" id="kSavings"></div></div>
+</div><div class="banner" id="cycleInfo"></div></div>
+
+<div class="card"><h2>Previsione fine ciclo</h2><div class="grid">
+<div class="metric"><div class="lab">Spesa prevista</div><div class="val" id="fSpend"></div></div>
+<div class="metric"><div class="lab">Avanzo previsto</div><div class="val green" id="fSurplus"></div></div>
+<div class="metric"><div class="lab">40% riserva</div><div class="val" id="fSafe"></div></div>
+<div class="metric"><div class="lab">60% lungo termine</div><div class="val blue" id="fInvest"></div></div>
+</div><div class="banner" id="forecastInfo"></div></div>
+
+<div class="card"><h2>Budget del ciclo</h2><div id="budgetList"></div></div>
+</section>
+
+<section id="movements" class="page">
+<div class="card"><h2>Nuova spesa</h2>
+<div class="field"><label>Importo €</label><input id="txAmount" type="number" inputmode="decimal" step="0.01" placeholder="25,50"></div>
+<div class="field"><label>Categoria</label><select id="txCategory"></select></div>
+<div class="field"><label>Conto</label><select id="txAccount"><option>Conto principale</option><option>Revolut</option><option>Vivid Money</option><option>Satispay</option><option>Buoni pasto</option></select></div>
+<div class="field"><label>Data</label><input id="txDate" type="date"></div>
+<div class="field"><label>Nota</label><input id="txNote" type="text" placeholder="Es. carburante, cena..."></div>
+<button id="addTx" class="btn">Salva spesa</button><div id="txMsg"></div></div>
+<div class="card"><h2>Movimenti</h2><div id="txList"></div></div>
+</section>
+
+<section id="analysis" class="page">
+<div class="card"><h2>Confronto cicli</h2>
+<div class="field"><label>Ciclo A</label><select id="cmpA"></select></div>
+<div class="field"><label>Ciclo B</label><select id="cmpB"></select></div>
+<div class="grid">
+<div class="metric"><div class="lab">Spesa A</div><div class="val" id="cmpSpendA">—</div></div>
+<div class="metric"><div class="lab">Spesa B</div><div class="val" id="cmpSpendB">—</div></div>
+<div class="metric"><div class="lab">Differenza</div><div class="val" id="cmpDiff">—</div></div>
+<div class="metric"><div class="lab">Avanzo migliore</div><div class="val green" id="cmpBest">—</div></div>
+</div><div class="banner" id="cmpMsg">Chiudi almeno un ciclo per creare lo storico.</div></div>
+<div class="card"><h2>Storico</h2><div style="overflow:auto"><table><thead><tr><th>Periodo</th><th class="num">Entrate</th><th class="num">Spese</th><th class="num">Avanzo</th></tr></thead><tbody id="historyBody"></tbody></table></div></div>
+</section>
+
+<section id="plan" class="page">
+<div class="card"><h2>Piano reattivo</h2>
+<div class="field"><label>Stipendio €</label><input id="salary" type="number" inputmode="decimal" step="0.01"></div>
+<div class="field"><label>Buoni pasto €</label><input id="meal" type="number" inputmode="decimal" step="0.01"></div>
+<div class="field"><label>Data stipendio corrente</label><input id="startDate" type="date"></div>
+<div class="field"><label>Prossimo stipendio previsto</label><input id="nextDate" type="date"></div>
+<div class="field"><label>% avanzo → riserva</label><input id="safePct" type="number" min="0" max="100"></div>
+<div class="field"><label>% avanzo → lungo termine</label><input id="investPct" type="number" min="0" max="100"></div>
+<button id="savePlan" class="btn">Salva e ricalcola</button><div id="planMsg"></div></div>
+
+<div class="card"><h2>Distribuzione automatica</h2><div id="allocation"></div></div>
+<div class="card"><h2>Chiusura ciclo</h2><div id="closeSummary"></div><button id="closeCycle" class="btn">Chiudi ciclo</button><div id="closeMsg"></div></div>
+</section>
+
+<nav class="tabs">
+<button class="tab active" data-target="dashboard">Dashboard</button>
+<button class="tab" data-target="movements">Movimenti</button>
+<button class="tab" data-target="analysis">Analisi</button>
+<button class="tab" data-target="plan">Piano</button>
+</nav>
+</div>
+
+<script>
+(function(){
+var BASE=2600;
+var cats=[
+{id:'savings',name:'Risparmio / investimento',base:800,type:'wealth',priority:99},
+{id:'transport',name:'Diesel + caselli',base:560,type:'protected',priority:1},
+{id:'mortgage',name:'Mutuo',base:100,type:'protected',priority:1},
+{id:'subscriptions',name:'Abbonamenti',base:140,type:'protected',priority:1},
+{id:'groceries',name:'Spesa',base:180,type:'flex',priority:4},
+{id:'dining',name:'Ristoranti / uscite',base:330,type:'flex',priority:1},
+{id:'hobby',name:'Hobby',base:140,type:'flex',priority:2},
+{id:'carfund',name:'Fondo auto',base:150,type:'rollover',priority:5},
+{id:'vacation',name:'Vacanze',base:100,type:'rollover',priority:3},
+{id:'emergency',name:'Imprevisti',base:100,type:'rollover',priority:6}
+];
+function $(x){return document.getElementById(x)}
+function today(){var d=new Date();return d.toISOString().slice(0,10)}
+function addDays(s,n){var d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function round(n){return Math.round((Number(n)||0)*100)/100}
+function eur(n){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(n)||0)}
+function fmt(s){return new Date(s+'T12:00:00').toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}
+function diffDays(a,b){return Math.max(1,Math.ceil((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000))}
+function load(){try{return JSON.parse(localStorage.getItem('wealthflow_pwa_v1'))||null}catch(e){return null}}
+var state=load()||{settings:{salary:2600,meal:180,start:today(),next:addDays(today(),30),safePct:40,investPct:60},tx:[],history:[]};
+function save(){localStorage.setItem('wealthflow_pwa_v1',JSON.stringify(state))}
+function computePlan(){
+ var a=cats.map(function(c){return Object.assign({},c,{planned:c.base})});var d=round(state.settings.salary-BASE);
+ if(d>0){
+   var w=round(d*.6),f=round(d-w);a[0].planned=round(800+w);
+   var flex=a.filter(function(c){return c.type==='flex'||c.type==='rollover'}),sum=flex.reduce(function(x,c){return x+c.base},0),u=0;
+   flex.forEach(function(c,i){var add=i===flex.length-1?round(f-u):round(f*c.base/sum);c.planned=round(c.base+add);u=round(u+add)})
+ } else if(d<0){
+   var shortage=-d;var r=a.filter(function(c){return c.type==='flex'||c.type==='rollover'}).sort(function(x,y){return x.priority-y.priority});
+   r.forEach(function(c){if(shortage<=0)return;var min=c.id==='groceries'?c.base*.65:(c.type==='rollover'?0:c.base*.25);var cap=round(c.planned-min);var cut=Math.min(shortage,cap);c.planned=round(c.planned-cut);shortage=round(shortage-cut)});
+   if(shortage>0){var cut=Math.min(shortage,a[0].planned);a[0].planned=round(a[0].planned-cut);shortage=round(shortage-cut)}
+ }
+ var total=round(a.reduce(function(x,c){return x+c.planned},0));a[0].planned=round(Math.max(0,a[0].planned+(state.settings.salary-total)));return a
+}
+function spent(){var m={};cats.forEach(function(c){m[c.id]=0});state.tx.forEach(function(t){m[t.cat]=round((m[t.cat]||0)+t.amount)});return m}
+function isConsume(c){return c.type==='protected'||c.type==='flex'}
+function forecast(){
+ var p=computePlan(),s=spent(),tot=diffDays(state.settings.start,state.settings.next),el=Math.min(tot,Math.max(1,diffDays(state.settings.start,today()))),pb=0,ps=0;
+ p.forEach(function(c){if(isConsume(c)){pb+=c.planned;ps+=Math.max(s[c.id]||0,round((s[c.id]||0)/el*tot))}});
+ pb=round(pb);ps=round(ps);var sur=round(Math.max(0,pb-ps)),safe=round(sur*state.settings.safePct/100);return {budget:pb,projected:ps,surplus:sur,safe:safe,invest:round(sur-safe),elapsed:el,total:tot}
+}
+function render(){
+ var p=computePlan(),s=spent(),f=forecast(),spentTot=round(Object.values(s).reduce(function(a,b){return a+b},0)),consBudget=round(p.filter(isConsume).reduce(function(a,c){return a+c.planned},0)),consSpent=round(p.filter(isConsume).reduce(function(a,c){return a+(s[c.id]||0)},0));
+ $('kSalary').textContent=eur(state.settings.salary);$('kSpent').textContent=eur(spentTot);$('kAvailable').textContent=eur(Math.max(0,consBudget-consSpent));$('kSavings').textContent=eur(p[0].planned);
+ $('cycleInfo').textContent='Ciclo '+fmt(state.settings.start)+' → '+fmt(state.settings.next)+' · giorno '+f.elapsed+'/'+f.total;
+ $('fSpend').textContent=eur(f.projected);$('fSurplus').textContent=eur(f.surplus);$('fSafe').textContent=eur(f.safe);$('fInvest').textContent=eur(f.invest);
+ $('forecastInfo').textContent=f.projected>f.budget?'Attenzione: proiezione sopra budget di '+eur(f.projected-f.budget):'Proiezione positiva: avanzo potenziale '+eur(f.surplus);
+ $('budgetList').innerHTML=p.filter(function(c){return c.type!=='wealth'}).map(function(c){var x=s[c.id]||0,r=c.planned?Math.min(1,x/c.planned):0;return '<div class="item"><div class="itemtop"><strong>'+c.name+'</strong><span>'+eur(x)+' / '+eur(c.planned)+'</span></div><div class="progress"><div class="bar" style="width:'+Math.min(100,r*100)+'%"></div></div></div>'}).join('');
+ $('salary').value=state.settings.salary;$('meal').value=state.settings.meal;$('startDate').value=state.settings.start;$('nextDate').value=state.settings.next;$('safePct').value=state.settings.safePct;$('investPct').value=state.settings.investPct;
+ $('allocation').innerHTML='<table><thead><tr><th>Categoria</th><th class="num">Base</th><th class="num">Piano</th></tr></thead><tbody>'+p.map(function(c){return '<tr><td>'+c.name+'</td><td class="num">'+eur(c.base)+'</td><td class="num">'+eur(c.planned)+'</td></tr>'}).join('')+'</tbody></table>';
+ var catsel=$('txCategory');catsel.innerHTML=cats.filter(function(c){return c.type!=='wealth'}).map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>'}).join('');$('txDate').value=$('txDate').value||today();
+ var map={};cats.forEach(function(c){map[c.id]=c.name});
+ $('txList').innerHTML=state.tx.length?state.tx.slice().reverse().map(function(t){return '<div class="tx"><div class="txhead"><div><div class="txname">'+(t.note||map[t.cat])+'</div><div class="txmeta">'+fmt(t.date)+' · '+map[t.cat]+' · '+t.account+'</div></div><div class="val amber">-'+eur(t.amount)+'</div></div></div>'}).join(''):'<div class="banner">Nessuna spesa registrata.</div>';
+ var cd={spent:spentTot,surplus:round(Math.max(0,consBudget-consSpent))};cd.safe=round(cd.surplus*state.settings.safePct/100);cd.invest=round(cd.surplus-cd.safe);
+ $('closeSummary').innerHTML='<div class="grid"><div class="metric"><div class="lab">Spese</div><div class="val">'+eur(cd.spent)+'</div></div><div class="metric"><div class="lab">Avanzo reale</div><div class="val green">'+eur(cd.surplus)+'</div></div><div class="metric"><div class="lab">Riserva extra</div><div class="val">'+eur(cd.safe)+'</div></div><div class="metric"><div class="lab">Lungo termine extra</div><div class="val blue">'+eur(cd.invest)+'</div></div></div>';
+ $('historyBody').innerHTML=state.history.length?state.history.slice().reverse().map(function(h){return '<tr><td>'+h.label+'</td><td class="num">'+eur(h.income)+'</td><td class="num">'+eur(h.spent)+'</td><td class="num">'+eur(h.surplus)+'</td></tr>'}).join(''):'<tr><td colspan="4">Nessun ciclo chiuso.</td></tr>';
+ var opts=state.history.map(function(h,i){return '<option value="'+i+'">'+h.label+'</option>'}).join('');$('cmpA').innerHTML=opts;$('cmpB').innerHTML=opts;if(state.history.length){$('cmpA').value=state.history.length-1;$('cmpB').value=Math.max(0,state.history.length-2)}updateCompare();save()
+}
+function updateCompare(){
+ if(!state.history.length)return;
+ var A=state.history[Number($('cmpA').value)]||state.history[state.history.length-1],B=state.history[Number($('cmpB').value)]||A,d=round(A.spent-B.spent);
+ $('cmpSpendA').textContent=eur(A.spent);$('cmpSpendB').textContent=eur(B.spent);$('cmpDiff').textContent=(d>0?'+':'')+eur(d);$('cmpBest').textContent=eur(Math.max(A.surplus,B.surplus));$('cmpMsg').textContent=d<0?'Nel ciclo A hai speso '+eur(Math.abs(d))+' in meno.':d>0?'Nel ciclo A hai speso '+eur(d)+' in più.':'Spesa identica.'
+}
+document.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active')});b.classList.add('active');$(b.dataset.target).classList.add('active')})});
+$('addTx').addEventListener('click',function(){var a=Number($('txAmount').value);if(!a||a<=0){$('txMsg').innerHTML='<div class="banner bad">Inserisci un importo valido.</div>';return}state.tx.push({amount:round(a),cat:$('txCategory').value,account:$('txAccount').value,date:$('txDate').value||today(),note:$('txNote').value.trim()});$('txAmount').value='';$('txNote').value='';$('txMsg').innerHTML='<div class="banner good">Spesa salvata.</div>';render()});
+$('savePlan').addEventListener('click',function(){var sal=Number($('salary').value),meal=Number($('meal').value),sp=Number($('safePct').value),ip=Number($('investPct').value);if(sp+ip!==100){$('planMsg').innerHTML='<div class="banner bad">Le percentuali devono sommare 100.</div>';return}state.settings={salary:round(sal),meal:round(meal),start:$('startDate').value,next:$('nextDate').value,safePct:sp,investPct:ip};$('planMsg').innerHTML='<div class="banner good">Piano aggiornato.</div>';render()});
+$('safePct').addEventListener('input',function(){$('investPct').value=100-Number(this.value||0)});$('investPct').addEventListener('input',function(){$('safePct').value=100-Number(this.value||0)});
+$('closeCycle').addEventListener('click',function(){var p=computePlan(),s=spent(),cb=round(p.filter(isConsume).reduce(function(a,c){return a+c.planned},0)),cs=round(p.filter(isConsume).reduce(function(a,c){return a+(s[c.id]||0)},0)),sur=round(Math.max(0,cb-cs));state.history.push({label:fmt(state.settings.start)+' → '+fmt(state.settings.next),income:state.settings.salary,spent:round(Object.values(s).reduce(function(a,b){return a+b},0)),surplus:sur});state.settings.start=state.settings.next;state.settings.next=addDays(state.settings.start,30);state.tx=[];$('closeMsg').innerHTML='<div class="banner good">Ciclo chiuso.</div>';render()});
+$('cmpA').addEventListener('change',updateCompare);$('cmpB').addEventListener('change',updateCompare);
+render();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){})}
+})();
+</script>
+</body>
+</html>
